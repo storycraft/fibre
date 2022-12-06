@@ -218,14 +218,14 @@ impl WinitComponent for Fibre {
                 window_id: _,
                 event: WindowEvent::Resized(size),
             } => {
-                self.skia_window_ctx.resize(size.width, size.height);
-
                 self.layout_engine
                     .set_style(
                         self.root_node,
                         Self::create_root_style(size.width as _, size.height as _),
                     )
                     .unwrap();
+
+                self.skia_window_ctx.resize(size.width, size.height);
             }
 
             Event::RedrawRequested(_) => {

@@ -68,7 +68,7 @@ impl SkiaSurfaceRenderer<'_> {
 
     pub fn finish(self) {
         if let Some(mut surface) = unsafe { self.canvas.surface() } {
-            surface.flush();
+            surface.flush_and_submit();
         }
 
         self.window
