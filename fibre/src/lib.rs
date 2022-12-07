@@ -331,7 +331,7 @@ pub fn run<Component: AsyncComponent + FibreElement + 'static>(
     let config = unsafe { display.find_configs(template) }
         .unwrap()
         .reduce(|config, acc| {
-            if config.num_samples() > acc.num_samples() {
+            if config.num_samples() > 0 {
                 config
             } else {
                 acc
