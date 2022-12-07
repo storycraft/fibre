@@ -13,7 +13,7 @@ use taffy::{
 
 use std::{collections::hash_map::Entry, ffi::CString, sync::Arc};
 
-use async_component::{AsyncComponent, PhantomState, StateCell, components::map::HashMapComponent};
+use async_component::{AsyncComponent, StateCell, components::map::HashMapComponent};
 use context::skia::SkiaSurfaceRenderer;
 use glutin::{
     config::ConfigTemplateBuilder,
@@ -62,10 +62,7 @@ pub struct Fibre {
     command_sender: UnboundedSender<FibreCommand>,
 
     #[stream(Self::on_command)]
-    command_recv: UnboundedReceiver<FibreCommand>,
-
-    #[state]
-    _state: PhantomState,
+    command_recv: UnboundedReceiver<FibreCommand>
 }
 
 impl Fibre {
@@ -94,9 +91,7 @@ impl Fibre {
             layout_engine: layout_engine.into(),
 
             command_sender,
-            command_recv,
-
-            _state: Default::default(),
+            command_recv
         };
 
         fibre.append_root(Box::new(component));
