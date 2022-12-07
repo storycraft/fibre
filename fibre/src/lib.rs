@@ -237,7 +237,7 @@ impl WinitComponent for Fibre {
 }
 
 enum FibreCommand {
-    /// Append node to root
+    /// Append component to root
     AppendRoot(Box<dyn FibreComponent>),
 
     /// Append as child of first parent node
