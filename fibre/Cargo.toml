@@ -12,7 +12,6 @@ repository = "https://github.com/storycraft/fibre"
 [dependencies]
 async-component = "0.5.2"
 async-component-winit = "0.5.2"
-async-component-components = "0.5.2"
 
 taffy = "0.2.1"
 

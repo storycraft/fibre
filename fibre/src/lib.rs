@@ -1,6 +1,5 @@
 pub mod context;
 
-use async_component_components::map::HashMapComponent;
 use async_component_winit::WinitComponent;
 use futures_channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender};
 pub use skia_safe as skia;
@@ -14,7 +13,7 @@ use taffy::{
 
 use std::{collections::hash_map::Entry, ffi::CString, sync::Arc};
 
-use async_component::{AsyncComponent, PhantomState, StateCell};
+use async_component::{AsyncComponent, PhantomState, StateCell, components::map::HashMapComponent};
 use context::skia::SkiaSurfaceRenderer;
 use glutin::{
     config::ConfigTemplateBuilder,
