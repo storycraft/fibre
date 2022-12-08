@@ -10,8 +10,8 @@ license = "Apache-2.0"
 repository = "https://github.com/storycraft/fibre"
 
 [dependencies]
-async-component = "0.5.3"
-async-component-winit = "0.5.3"
+async-component = "0.5.4"
+async-component-winit = "0.5.4"
 
 taffy = "0.2.1"
 
