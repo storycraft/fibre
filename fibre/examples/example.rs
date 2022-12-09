@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use async_component::{AsyncComponent, PhantomState, StateCell};
+use async_component::{AsyncComponent, StateCell};
 use fibre::{
     context::skia::SkiaSurfaceRenderer, skia::Paint, FibreChannel, FibreElement, FibreNode,
 };
@@ -17,18 +17,12 @@ fn main() {
 
 #[derive(AsyncComponent)]
 pub struct TestComponent {
-    #[state]
-    _state: PhantomState,
-
     channel: Option<FibreChannel>,
 }
 
 impl TestComponent {
     pub fn new() -> Self {
-        Self {
-            _state: Default::default(),
-            channel: None,
-        }
+        Self { channel: None }
     }
 }
 

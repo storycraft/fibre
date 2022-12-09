@@ -13,7 +13,10 @@ use taffy::{
 
 use std::{collections::hash_map::Entry, ffi::CString, sync::Arc};
 
-use async_component::{AsyncComponent, StateCell, components::map::HashMapComponent};
+use async_component::{
+    components::{BoxedComponent, HashMapComponent},
+    AsyncComponent, StateCell,
+};
 use context::skia::SkiaSurfaceRenderer;
 use glutin::{
     config::ConfigTemplateBuilder,
@@ -43,7 +46,7 @@ pub trait FibreElement {
 pub trait FibreComponent: AsyncComponent + FibreElement {}
 impl<T: AsyncComponent + FibreElement> FibreComponent for T {}
 
-pub type BoxedFibreComponent = Box<dyn FibreComponent>;
+pub type BoxedFibreComponent = BoxedComponent<dyn FibreComponent>;
 
 #[derive(AsyncComponent)]
 pub struct Fibre {
@@ -62,7 +65,7 @@ pub struct Fibre {
     command_sender: UnboundedSender<FibreCommand>,
 
     #[stream(Self::on_command)]
-    command_recv: UnboundedReceiver<FibreCommand>
+    command_recv: UnboundedReceiver<FibreCommand>,
 }
 
 impl Fibre {
@@ -91,10 +94,10 @@ impl Fibre {
             layout_engine: layout_engine.into(),
 
             command_sender,
-            command_recv
+            command_recv,
         };
 
-        fibre.append_root(Box::new(component));
+        fibre.append_root(BoxedFibreComponent::new(Box::new(component)));
 
         fibre
     }
@@ -233,10 +236,10 @@ impl WinitComponent for Fibre {
 
 enum FibreCommand {
     /// Append component to root
-    AppendRoot(Box<dyn FibreComponent>),
+    AppendRoot(BoxedFibreComponent),
 
     /// Append as child of first parent node
-    AppendChild(Node, Box<dyn FibreComponent>),
+    AppendChild(Node, BoxedFibreComponent),
 
     /// Update style of node
     UpdateStyle(Node, Style),
@@ -254,13 +257,18 @@ pub struct FibreChannel {
 impl FibreChannel {
     pub fn append_root(&self, component: impl FibreComponent + 'static) {
         self.sender
-            .unbounded_send(FibreCommand::AppendRoot(Box::new(component)))
+            .unbounded_send(FibreCommand::AppendRoot(BoxedFibreComponent::new(
+                Box::new(component),
+            )))
             .ok();
     }
 
     pub fn append_child(&self, component: impl FibreComponent + 'static) {
         self.sender
-            .unbounded_send(FibreCommand::AppendChild(self.node, Box::new(component)))
+            .unbounded_send(FibreCommand::AppendChild(
+                self.node,
+                BoxedFibreComponent::new(Box::new(component)),
+            ))
             .ok();
     }
 
@@ -284,11 +292,13 @@ pub struct FibreNode<'a> {
 
 impl FibreNode<'_> {
     pub fn append_root(&mut self, component: impl FibreComponent + 'static) {
-        self.fibre.append_root(Box::new(component));
+        self.fibre
+            .append_root(BoxedFibreComponent::new(Box::new(component)));
     }
 
     pub fn append_child(&mut self, component: impl FibreComponent + 'static) {
-        self.fibre.append_child(self.node, Box::new(component));
+        self.fibre
+            .append_child(self.node, BoxedFibreComponent::new(Box::new(component)));
     }
 
     pub fn update_style(&mut self, style: Style) {
