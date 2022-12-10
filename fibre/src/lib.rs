@@ -2,6 +2,7 @@ pub mod context;
 
 use async_component_winit::WinitComponent;
 use futures_channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender};
+use rustc_hash::FxHasher;
 pub use skia_safe as skia;
 pub use taffy;
 use taffy::{
@@ -11,7 +12,7 @@ use taffy::{
     Taffy,
 };
 
-use std::{collections::hash_map::Entry, ffi::CString, sync::Arc};
+use std::{collections::hash_map::Entry, ffi::CString, hash::BuildHasherDefault, sync::Arc};
 
 use async_component::{
     components::{BoxedComponent, HashMapComponent},
@@ -55,7 +56,7 @@ pub struct Fibre {
     skia_window_ctx: SkiaWindowContext,
 
     #[component(Self::on_component_change)]
-    components: HashMapComponent<Node, BoxedFibreComponent>,
+    components: HashMapComponent<Node, BoxedFibreComponent, BuildHasherDefault<FxHasher>>,
 
     root_node: Node,
 
@@ -88,7 +89,7 @@ impl Fibre {
             window,
             skia_window_ctx,
 
-            components: HashMapComponent::new(),
+            components: HashMapComponent::with_hasher(Default::default()),
 
             root_node,
             layout_engine: layout_engine.into(),
