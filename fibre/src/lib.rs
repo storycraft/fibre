@@ -31,6 +31,7 @@ pub struct Fibre<T: FibreComponent> {
 
     skia_window_ctx: SkiaWindowContext,
 
+    #[component]
     root_node: WidgetNode,
 
     #[component(Self::on_component_change)]
@@ -89,7 +90,7 @@ impl<T: FibreComponent> WinitComponent for Fibre<T> {
                 window_id: _,
                 event: WindowEvent::Resized(size),
             } => {
-                self.root_node.set_style(Self::create_root_style(size.width as _, size.height as _));
+                *self.root_node.style = Self::create_root_style(size.width as _, size.height as _);
 
                 self.skia_window_ctx.resize(size.width, size.height);
             }

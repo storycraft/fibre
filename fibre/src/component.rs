@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use async_component::AsyncComponent;
+use async_component::{AsyncComponent, StateCell};
 use taffy::{
     prelude::{Layout, Node, Size},
     style::Style,
@@ -16,8 +16,12 @@ pub trait FibreComponent: AsyncComponent {
     fn on_event(&mut self, event: &mut Event<()>);
 }
 
+#[derive(AsyncComponent)]
 pub struct WidgetNode {
     node: Node,
+
+    #[state(Self::on_style_update)]
+    pub style: StateCell<Style>,
 
     layout: Rc<RefCell<Taffy>>,
 }
@@ -26,30 +30,33 @@ impl WidgetNode {
     pub fn new_root(style: Style) -> Self {
         let mut layout = Taffy::new();
 
-        let node = layout.new_leaf(style).unwrap();
+        let node = layout.new_leaf(style.clone()).unwrap();
 
         Self {
             node,
+
+            style: style.into(),
 
             layout: Rc::new(RefCell::new(layout)),
         }
     }
 
-    pub fn set_style(&mut self, style: Style) {
+    fn on_style_update(&mut self) {
         self.layout
             .borrow_mut()
-            .set_style(self.node, style)
+            .set_style(self.node, self.style.clone())
             .unwrap();
     }
 
     pub fn new_child(&self, style: Style) -> WidgetNode {
         let mut layout = self.layout.borrow_mut();
 
-        let child_node = layout.new_leaf(style).unwrap();
+        let child_node = layout.new_leaf(Style::DEFAULT).unwrap();
         layout.add_child(self.node, child_node).unwrap();
 
         WidgetNode {
             node: child_node,
+            style: style.into(),
             layout: self.layout.clone(),
         }
     }
