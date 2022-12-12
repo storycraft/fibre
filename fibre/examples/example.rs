@@ -20,7 +20,6 @@ fn main() {
 #[derive(AsyncComponent)]
 #[component(Self::update)]
 pub struct TestComponent {
-    #[component]
     node: WidgetNode,
 
     #[component]
@@ -29,12 +28,12 @@ pub struct TestComponent {
 
 impl TestComponent {
     pub fn new(mut node: WidgetNode) -> Self {
-        *node.style = Style {
+        node.set_style(Style {
             align_self: AlignSelf::Center,
 
             size: Size::from_points(100.0, 100.0),
             ..Default::default()
-        };
+        });
 
         Self {
             node,
