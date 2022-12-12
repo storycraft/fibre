@@ -1,33 +1,56 @@
 use std::time::{Duration, Instant};
 
-use async_component::{AsyncComponent, StateCell};
+use async_component::{components::VecComponent, AsyncComponent, StateCell};
 use fibre::{
-    context::skia::SkiaSurfaceRenderer, skia::Paint, FibreChannel, FibreElement, FibreNode,
+    component::{FibreComponent, WidgetNode},
+    context::skia::SkiaSurfaceRenderer,
+    skia::Paint,
 };
 use skia_safe::{Color4f, Point, Rect};
 use taffy::{
-    prelude::{Layout, Size},
-    style::{AlignSelf, Display, Style},
+    prelude::Size,
+    style::{AlignSelf, Style},
 };
 use winit::event::{Event, WindowEvent};
 
 fn main() {
-    fibre::run(|_| TestComponent::new());
+    fibre::run(|_, node| TestComponent::new(node));
 }
 
 #[derive(AsyncComponent)]
+#[component(Self::update)]
 pub struct TestComponent {
-    channel: Option<FibreChannel>,
+    #[component]
+    node: WidgetNode,
+
+    #[component]
+    circles: VecComponent<FadingCircle>,
 }
 
 impl TestComponent {
-    pub fn new() -> Self {
-        Self { channel: None }
+    pub fn new(mut node: WidgetNode) -> Self {
+        *node.style = Style {
+            align_self: AlignSelf::Center,
+
+            size: Size::from_points(100.0, 100.0),
+            ..Default::default()
+        };
+
+        Self {
+            node,
+            circles: VecComponent::new(),
+        }
+    }
+
+    fn update(&mut self) {
+        self.circles.retain(|circle| !circle.expired());
     }
 }
 
-impl FibreElement for TestComponent {
-    fn draw(&self, renderer: &mut SkiaSurfaceRenderer, layout: &Layout) {
+impl FibreComponent for TestComponent {
+    fn draw(&self, renderer: &mut SkiaSurfaceRenderer) {
+        let layout = self.node.layout();
+
         let mut font = skia_safe::Font::default();
         font.set_size(50.0);
 
@@ -40,6 +63,10 @@ impl FibreElement for TestComponent {
             ),
             &Paint::new(Color4f::from(0xffffffff), None),
         );
+
+        for circle in &self.circles {
+            circle.draw(renderer);
+        }
     }
 
     fn on_event(&mut self, event: &mut Event<()>) {
@@ -48,30 +75,12 @@ impl FibreElement for TestComponent {
             ..
         } = event
         {
-            self.channel
-                .as_mut()
-                .unwrap()
-                .append_root(FadingCircle::new(
-                    (position.x as _, position.y as _),
-                    16.0,
-                    Duration::from_secs(1),
-                ));
+            self.circles.push(FadingCircle::new(
+                (position.x as _, position.y as _),
+                16.0,
+                Duration::from_secs(1),
+            ));
         }
-    }
-
-    fn mount(&mut self, node: &mut FibreNode) {
-        node.update_style(Style {
-            align_self: AlignSelf::Center,
-
-            size: Size::from_points(100.0, 100.0),
-            ..Default::default()
-        });
-
-        self.channel = Some(node.create_channel());
-    }
-
-    fn unmount(&mut self) {
-        self.channel.take();
     }
 }
 
@@ -87,8 +96,6 @@ pub struct FadingCircle {
 
     #[state]
     elapsed: StateCell<Duration>,
-
-    channel: Option<FibreChannel>,
 }
 
 impl FadingCircle {
@@ -99,33 +106,20 @@ impl FadingCircle {
             duration,
             start: Instant::now(),
             elapsed: Default::default(),
-            channel: None,
         }
     }
 
     fn update(&mut self) {
         *self.elapsed = self.start.elapsed();
-        if *self.elapsed > self.duration {
-            self.channel.as_mut().unwrap().retire();
-        }
+    }
+
+    pub fn expired(&self) -> bool {
+        *self.elapsed > self.duration
     }
 }
 
-impl FibreElement for FadingCircle {
-    fn mount(&mut self, node: &mut FibreNode) {
-        node.update_style(Style {
-            display: Display::None,
-            ..Default::default()
-        });
-
-        self.channel = Some(node.create_channel());
-    }
-
-    fn unmount(&mut self) {
-        self.channel.take();
-    }
-
-    fn draw(&self, renderer: &mut SkiaSurfaceRenderer, _: &Layout) {
+impl FibreComponent for FadingCircle {
+    fn draw(&self, renderer: &mut SkiaSurfaceRenderer) {
         let mut color = Color4f::from(0xffff0000);
 
         color.a *= 1.0 - 1.0_f32.min(self.elapsed.as_secs_f32() / self.duration.as_secs_f32());
