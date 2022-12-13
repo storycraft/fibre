@@ -90,7 +90,7 @@ impl<T: FibreComponent> WinitComponent for Fibre<T> {
                 window_id: _,
                 event: WindowEvent::Resized(size),
             } => {
-                *self.root_node.style = Self::create_root_style(size.width as _, size.height as _);
+                self.root_node.style.size = Size::from_points(size.width as _, size.height as _);
 
                 self.skia_window_ctx.resize(size.width, size.height);
             }
