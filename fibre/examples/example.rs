@@ -18,12 +18,11 @@ fn main() {
 }
 
 #[derive(AsyncComponent)]
-#[component(Self::update)]
 pub struct TestComponent {
     #[component]
     node: WidgetNode,
 
-    #[component]
+    #[component(Self::on_circles_update)]
     circles: VecComponent<FadingCircle>,
 }
 
@@ -42,7 +41,7 @@ impl TestComponent {
         }
     }
 
-    fn update(&mut self) {
+    fn on_circles_update(&mut self) {
         self.circles.retain(|circle| !circle.expired());
     }
 }
@@ -50,9 +49,6 @@ impl TestComponent {
 impl FibreComponent for TestComponent {
     fn draw(&self, renderer: &mut SkiaSurfaceRenderer) {
         let layout = self.node.layout();
-
-        let mut font = skia_safe::Font::default();
-        font.set_size(50.0);
 
         renderer.canvas().draw_rect(
             Rect::new(
