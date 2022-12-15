@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use async_component::{components::VecComponent, AsyncComponent, StateCell};
+use async_component::{AsyncComponent, StateCell, context::StateContext, components::vec::VecComponent};
 use fibre::{
     component::{FibreComponent, WidgetNode},
     context::skia::SkiaSurfaceRenderer,
@@ -14,11 +14,13 @@ use taffy::{
 use winit::event::{Event, WindowEvent};
 
 fn main() {
-    fibre::run(|_, node| TestComponent::new(node));
+    fibre::run(|_, cx, node| TestComponent::new(cx, node));
 }
 
 #[derive(AsyncComponent)]
 pub struct TestComponent {
+    cx: StateContext,
+
     #[component]
     node: WidgetNode,
 
@@ -27,7 +29,7 @@ pub struct TestComponent {
 }
 
 impl TestComponent {
-    pub fn new(mut node: WidgetNode) -> Self {
+    pub fn new(cx: &StateContext, mut node: WidgetNode) -> Self {
         *node.style = Style {
             align_self: AlignSelf::Center,
 
@@ -36,8 +38,9 @@ impl TestComponent {
         };
 
         Self {
+            cx: cx.clone(),
             node,
-            circles: VecComponent::new(),
+            circles: VecComponent(Vec::new()),
         }
     }
 
@@ -60,7 +63,7 @@ impl FibreComponent for TestComponent {
             &Paint::new(Color4f::from(0xffffffff), None),
         );
 
-        for circle in &self.circles {
+        for circle in &*self.circles {
             circle.draw(renderer);
         }
     }
@@ -72,6 +75,7 @@ impl FibreComponent for TestComponent {
         } = event
         {
             self.circles.push(FadingCircle::new(
+                &self.cx,
                 (position.x as _, position.y as _),
                 16.0,
                 Duration::from_secs(1),
@@ -95,18 +99,20 @@ pub struct FadingCircle {
 }
 
 impl FadingCircle {
-    fn new(position: (f32, f32), radius: f32, duration: Duration) -> Self {
+    fn new(cx: &StateContext, position: (f32, f32), radius: f32, duration: Duration) -> Self {
         Self {
             position,
             radius,
             duration,
             start: Instant::now(),
-            elapsed: Default::default(),
+            elapsed: StateCell::new(cx.clone(), Default::default()),
         }
     }
 
     fn update(&mut self) {
-        *self.elapsed = self.start.elapsed();
+        if !self.expired() {
+            *self.elapsed = self.start.elapsed();
+        }
     }
 
     pub fn expired(&self) -> bool {

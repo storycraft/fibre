@@ -9,7 +9,7 @@ use taffy::{prelude::Size, style::Style};
 
 use std::{ffi::CString, sync::Arc};
 
-use async_component::AsyncComponent;
+use async_component::{context::StateContext, AsyncComponent};
 use glutin::{
     config::ConfigTemplateBuilder,
     display::{Display, DisplayApiPreference},
@@ -40,14 +40,15 @@ pub struct Fibre<T: FibreComponent> {
 
 impl<T: FibreComponent> Fibre<T> {
     pub fn new(
+        cx: &StateContext,
         window: Arc<Window>,
         skia_window_ctx: SkiaWindowContext,
-        component_fn: impl FnOnce(&Arc<Window>, WidgetNode) -> T,
+        component_fn: impl FnOnce(&Arc<Window>, &StateContext, WidgetNode) -> T,
     ) -> Self {
         let (width, height) = window.inner_size().into();
-        let root_node = WidgetNode::new_root(Self::create_root_style(width, height));
+        let root_node = WidgetNode::new_root(cx, Self::create_root_style(width, height));
 
-        let component = component_fn(&window, root_node.new_child(Style::DEFAULT));
+        let component = component_fn(&window, cx, root_node.new_child(Style::DEFAULT));
 
         Self {
             window,
@@ -105,7 +106,7 @@ impl<T: FibreComponent> WinitComponent for Fibre<T> {
 }
 
 pub fn run<Component: FibreComponent + 'static>(
-    setup_func: impl FnOnce(&Arc<Window>, WidgetNode) -> Component,
+    setup_func: impl FnOnce(&Arc<Window>, &StateContext, WidgetNode) -> Component,
 ) -> ! {
     let event_loop = EventLoopBuilder::with_user_event().build();
 
@@ -151,8 +152,7 @@ pub fn run<Component: FibreComponent + 'static>(
 
     let window = Arc::new(window);
 
-    async_component_winit::run(
-        event_loop,
-        Fibre::new(window, skia_window_ctx, setup_func),
-    )
+    async_component_winit::run(event_loop, move |cx| {
+        Fibre::new(cx, window, skia_window_ctx, setup_func)
+    })
 }
