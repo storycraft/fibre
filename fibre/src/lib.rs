@@ -26,6 +26,7 @@ use winit::{
 use crate::context::{gl::GlWindowContext, skia::SkiaWindowContext};
 
 #[derive(AsyncComponent)]
+#[component(Self::on_update)]
 pub struct Fibre<T: FibreComponent> {
     window: Arc<Window>,
 
@@ -34,7 +35,7 @@ pub struct Fibre<T: FibreComponent> {
     #[component]
     root_node: WidgetNode,
 
-    #[component(Self::on_component_change)]
+    #[component]
     component: T,
 }
 
@@ -66,7 +67,7 @@ impl<T: FibreComponent> Fibre<T> {
         }
     }
 
-    fn on_component_change(&mut self) {
+    fn on_update(&mut self) {
         self.window.request_redraw();
     }
 

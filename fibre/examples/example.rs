@@ -18,13 +18,14 @@ fn main() {
 }
 
 #[derive(AsyncComponent)]
+#[component(Self::on_update)]
 pub struct TestComponent {
     cx: StateContext,
 
     #[component]
     node: WidgetNode,
 
-    #[component(Self::on_circles_update)]
+    #[component]
     circles: VecComponent<FadingCircle>,
 }
 
@@ -44,7 +45,7 @@ impl TestComponent {
         }
     }
 
-    fn on_circles_update(&mut self) {
+    fn on_update(&mut self) {
         self.circles.retain(|circle| !circle.expired());
     }
 }
